@@ -47,6 +47,7 @@
 ///
 - (id)initWithDataPath:(NSString *)dataPath language:(NSString *)language DEPRECATED_ATTRIBUTE;
 - (id)initWithLanguage:(NSString*)language;
+- (id)initWithVariables:(NSDictionary*)parameters language:(NSString *)language;
 - (void)setVariableValue:(NSString *)value forKey:(NSString *)key;
 
 - (BOOL)recognize;

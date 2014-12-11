@@ -12,6 +12,8 @@
 #import "baseapi.h"
 #import "environ.h"
 #import "pix.h"
+#import "genericvector.h"
+#import "strngs.h"
 #import "ocrclass.h"
 #import "allheaders.h"
 
@@ -22,6 +24,7 @@ namespace tesseract {
 @interface Tesseract () {
     NSString* _dataPath;
     NSString* _language;
+	NSDictionary* _initVariables;
     NSMutableDictionary* _variables;
 	tesseract::TessBaseAPI* _tesseract;
 	//const UInt8 *_pixels;
@@ -51,9 +54,16 @@ namespace tesseract {
     return self;
 }
 
+- (id)initWithVariables:(NSDictionary *)parameters language:(NSString *)language {
+	self = [self initPrivateWithDataPath:nil language:language variables: parameters];
+	if (self) {
+	}
+	return self;
+}
+
 - (id)initWithLanguage:(NSString*)language {
     
-    self = [self initPrivateWithDataPath:nil language:language];
+	self = [self initPrivateWithDataPath:nil language:language variables: nil];
     if (self) {
     }
     return self;
@@ -77,16 +87,17 @@ namespace tesseract {
 }
 
 - (id)initWithDataPath:(NSString *)dataPath language:(NSString *)language {
-    return [self initPrivateWithDataPath:nil language:language];
+    return [self initPrivateWithDataPath:nil language:language variables:nil];
 }
 
-- (id)initPrivateWithDataPath:(NSString *)dataPath language:(NSString *)language {
+- (id)initPrivateWithDataPath:(NSString *)dataPath language:(NSString *)language variables: (NSDictionary*) parameters {
     
 	self = [super init];
 	if (self) {
 		_dataPath = dataPath;
 		_language = language;
-        
+		_initVariables = parameters;
+
         _monitor = new ETEXT_DESC();
         _monitor->cancel = (CANCEL_FUNC)[self methodForSelector:@selector(tesseractCancelCallbackFunction:)];
         _monitor->cancel_this = (__bridge void*)self;
@@ -116,7 +127,23 @@ namespace tesseract {
 }
 
 - (BOOL)initEngine {
-	int returnCode = _tesseract->Init([_dataPath UTF8String], [_language UTF8String]);
+	NSArray* keys = _initVariables.allKeys;
+	GenericVector<STRING> tessKeys;
+	for( id key in keys ){
+		tessKeys.push_back(STRING([key UTF8String]));
+	}
+
+	NSArray* values = _initVariables.allValues;
+	GenericVector<STRING> tessValues;
+	for( id val in values ){
+		tessValues.push_back(STRING([val UTF8String]));
+	}
+
+	int returnCode = _tesseract->Init([_dataPath UTF8String],
+									  [_language UTF8String],
+									  tesseract::OEM_TESSERACT_ONLY,
+									  0, 0, &tessKeys, &tessValues, false);
+
 	return (returnCode == 0) ? YES : NO;
 }
 
